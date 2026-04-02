@@ -19,7 +19,7 @@ class ProductController extends Controller
             return $query->where('name', 'like', "%{$search}%")
                          ->orWhere('description', 'like', "%{$search}%");
         })
-        ->paginate(10); // 3. Pagina de 10 em 10 (Requisito 30)
+        ->paginate(6); // 3. Pagina de 10 em 10 (Requisito 30)
 
         return response()->json($products);
     }

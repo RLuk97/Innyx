@@ -11,15 +11,17 @@ class ProductController extends Controller
     // Listar todos os produtos com paginação e busca (Requisito 2.22, 2.24, 2.25)
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        // 1. Pegamos o termo de busca que vem do Front-end
+        $search = $request->query('search');
 
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-        }
+        // 2. Fazemos a query: Se houver busca, filtra por nome ou descrição
+        $products = \App\Models\Product::when($search, function ($query, $search) {
+            return $query->where('name', 'like', "%{$search}%")
+                         ->orWhere('description', 'like', "%{$search}%");
+        })
+        ->paginate(10); // 3. Pagina de 10 em 10 (Requisito 30)
 
-        return response()->json($query->paginate(10));
+        return response()->json($products);
     }
 
     // Criar um novo produto (Requisito 2.6, 2.12 a 2.18)

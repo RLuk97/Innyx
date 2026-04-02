@@ -8,28 +8,59 @@ const password = ref('');
 const token = ref(localStorage.getItem('token') || '');
 const isLoading = ref(false);
 const errorMessage = ref('');
+const products = ref([]); // Onde os produtos ficarão guardados
+const search = ref(''); // Para o filtro de busca
+const currentPage = ref(1); // Página atual
+const lastPage = ref(1); // Última página (vinda do Laravel)
+const isFetching = ref(false); // Spinner de carregamento dos produtos
+const showList = ref(false); // Controla se mostra o login ou a lista
+
+// Configuração global do Axios para enviar o Token
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const fetchProducts = async (page = 1) => {
+  isFetching.value = true;
+  try {
+    const response = await axios.get(`http://localhost:8000/api/products`, {
+      params: {
+        page: page,
+        search: search.value
+      }
+    });
+
+    products.value = response.data.data;
+    currentPage.value = response.data.current_page;
+    lastPage.value = response.data.last_page;
+    
+    showList.value = true; // Muda a visão para a listagem
+  } catch (error) {
+    console.error("Erro ao buscar produtos:", error);
+    alert("Sessão expirada ou erro no servidor. Faça login novamente.");
+    handleLogout();
+  } finally {
+    isFetching.value = false;
+  }
+};
 
 const handleLogin = async () => {
   isLoading.value = true;
   errorMessage.value = '';
 
   try {
-    // Chamada ao Backend Laravel
     const response = await axios.post('http://localhost:8000/api/login', {
       email: email.value,
       password: password.value
     });
 
-    // Pega o token da resposta (conforme vimos no Thunder Client)
-    const accessToken = response.data.access_token;
-    
-    // Salva no estado e no localStorage para não deslogar ao dar F5
-    token.value = accessToken;
-    localStorage.setItem('token', accessToken);
-    
-    alert('Login realizado com sucesso!');
+    token.value = response.data.access_token;
+    localStorage.setItem('token', token.value);
   } catch (error: any) {
-    // Trata erros de e-mail/senha ou servidor fora do ar
     errorMessage.value = error.response?.data?.message || 'Falha na conexão com o servidor.';
     console.error('Erro no login:', error);
   } finally {
@@ -39,6 +70,7 @@ const handleLogin = async () => {
 
 const handleLogout = () => {
   token.value = '';
+  showList.value = false; // Ajuste: Garante que volta para a tela de login
   localStorage.removeItem('token');
 };
 </script>
@@ -75,7 +107,7 @@ const handleLogout = () => {
       </form>
     </div>
 
-    <div v-else class="text-center bg-white p-12 rounded-3xl shadow-xl border border-gray-100">
+    <div v-else-if="token && !showList" class="text-center bg-white p-12 rounded-3xl shadow-xl border border-gray-100">
       <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
@@ -88,10 +120,17 @@ const handleLogout = () => {
         <button @click="handleLogout" class="px-6 py-3 rounded-xl font-bold text-red-500 hover:bg-red-50 transition-all uppercase text-xs tracking-widest">
           Sair
         </button>
-        <button class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl font-bold text-white shadow-lg transition-all uppercase text-xs tracking-widest">
+        <button @click="fetchProducts(1)" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl font-bold text-white shadow-lg transition-all uppercase text-xs tracking-widest">
           Ir para Produtos
         </button>
       </div>
+    </div>
+
+    <div v-else-if="showList" class="w-full max-w-6xl animate-fade-in">
+       <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200">
+          <h2 class="text-2xl font-bold mb-4">Tabela de Produtos aparecerá aqui!</h2>
+          <button @click="showList = false" class="text-blue-600 underline">Voltar</button>
+       </div>
     </div>
 
   </div>

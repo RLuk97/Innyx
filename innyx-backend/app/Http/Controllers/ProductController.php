@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -23,29 +24,42 @@ class ProductController extends Controller
         return response()->json($products);
     }
 
-    // Criar um novo produto (Ajustado para o seu Modal de Vidro)
+    /**
+     * Criar um novo produto (Ajustado para o seu Modal de Vidro)
+     * Este é o método que estava faltando!
+     */
     public function store(Request $request)
     {
-        // 1. Validação (Simplificada para bater com o seu productForm do Vue)
-        $validatedData = $request->validate([
-            'name'        => 'required|max:50',
-            'description' => 'required|max:200',
-            'price'       => 'required|numeric|min:0.01',
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
-        ]);
+        try {
+            // 1. Validação dos campos enviados pelo Vue
+            $validator = Validator::make($request->all(), [
+                'name'        => 'required|max:50',
+                'description' => 'required|max:200',
+                'price'       => 'required|numeric|min:0.01',
+                'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            ]);
 
-        // 2. Lógica para upload de imagem
-        if ($request->hasFile('image')) {
-            // Salva em storage/app/public/products
-            $path = $request->file('image')->store('products', 'public');
-            // Salva o link acessível no banco
-            $validatedData['image'] = asset('storage/' . $path);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $validatedData = $validator->validated();
+
+            // 2. Lógica para upload de imagem
+            if ($request->hasFile('image')) {
+                $path = $request->file('image')->store('products', 'public');
+                // Salva a URL absoluta no banco para facilitar a exibição no Front
+                $validatedData['image'] = asset('storage/' . $path);
+            }
+
+            // 3. Persistência no Banco (MySQL)
+            $product = Product::create($validatedData);
+
+            return response()->json($product, 201);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Falha interna: ' . $e->getMessage()], 500);
         }
-
-        // 3. Persistência no banco de dados
-        $product = Product::create($validatedData);
-
-        return response()->json($product, 201);
     }
 
     public function show($id)
@@ -66,7 +80,7 @@ class ProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            // Remove a imagem antiga do disco se não for o placeholder
+            // Remove a imagem antiga do disco se existir
             if ($product->image && !str_contains($product->image, 'placeholder')) {
                 $oldPath = str_replace(asset('storage/'), '', $product->image);
                 Storage::disk('public')->delete($oldPath);

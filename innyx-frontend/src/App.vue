@@ -73,25 +73,40 @@ const handleImageUpload = (event: any) => {
 };
 
 const submitForm = async () => {
-    // Aqui enviaremos para o Laravel usando FormData (necessário para arquivos)
-    isLoading.value = true;
+    if (!productForm.value.name || !productForm.value.price) {
+        alert("Por favor, preencha os campos essenciais.");
+        return;
+    }
+
+    isLoading.value = true; // Ativa o loading no botão
+    
     try {
         const formData = new FormData();
         formData.append('name', productForm.value.name);
         formData.append('price', productForm.value.price);
         formData.append('description', productForm.value.description);
+        
         if (productForm.value.image) {
             formData.append('image', productForm.value.image);
         }
 
+        // No seu App.vue, garanta que o POST aponte para o endereço completo do Backend
         await axios.post('http://localhost:8000/api/products', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         
+        // 1. Feedback Visual de Sucesso
+        alert("✅ Registro de Ativo Concluído com Sucesso!");
+
+        // 2. Atualiza a lista em tempo real (Página 1 para ver o novo item no topo)
         await fetchProducts(1);
+        
+        // 3. Fecha o modal e limpa tudo
         closeModal();
+
     } catch (e) {
-        alert('Erro ao salvar produto. Verifique os dados.');
+        console.error(e);
+        alert('❌ Erro na sincronização. Verifique a conexão com o Buffer.');
     } finally {
         isLoading.value = false;
     }
@@ -123,9 +138,9 @@ onMounted(() => {
           <form @submit.prevent="handleLogin" class="space-y-4">
             <input v-model="email" type="email" placeholder="E-mail Corporativo" class="w-full bg-white/[0.05] border border-white/5 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#7c3aed]/50 focus:bg-white/[0.08] transition-all text-sm">
             <input v-model="password" type="password" placeholder="Chave de Acesso" class="w-full bg-white/[0.05] border border-white/5 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#7c3aed]/50 focus:bg-white/[0.08] transition-all text-sm">
-            <button :disabled="isLoading" class="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-[#7c3aed] hover:text-white transition-all uppercase tracking-[0.2em] text-[11px] mt-4 cursor-pointer">
-              {{ isLoading ? 'PROCESSANDO...' : 'AUTENTICAR' }}
-            </button>
+            <button :disabled="isLoading" class="w-full bg-[#7c3aed] text-white font-black py-5 rounded-2xl hover:bg-white hover:text-black transition-all shadow-xl shadow-[#7c3aed]/20 uppercase tracking-[0.3em] text-xs cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-wait">
+                    {{ isLoading ? 'SINCRONIZANDO COM O BANCO...' : 'Confirmar Registro no Buffer' }}
+          </button>
           </form>
         </div>
       </Transition>
@@ -177,7 +192,7 @@ onMounted(() => {
                 <td class="px-10 py-3.5">
                   <div class="flex items-center gap-6">
                     <div class="w-12 h-12 rounded-2xl bg-black border border-white/5 flex-none overflow-hidden group-hover:border-[#7c3aed]/40 transition-all">
-                        <img :src="product.image || 'https://via.placeholder.com/150'" class="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700">
+                        <img :src="product.image && product.image.startsWith('http') ? product.image : `http://localhost:8000/storage/${product.image}`" class="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700">
                     </div>
                     <div>
                       <div class="font-bold text-white text-base group-hover:text-[#7c3aed] transition-colors tracking-tight">{{ product.name }}</div>

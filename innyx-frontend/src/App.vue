@@ -6,14 +6,17 @@ import { useProducts } from './composables/useProducts';
 // 1. Lógica do Composable
 const { products, search, currentPage, lastPage, isFetching, fetchProducts } = useProducts();
 
-// 2. Estados de Autenticação
+// 2. Estados de Autenticação e Sistema
 const token = ref(localStorage.getItem('token') || '');
 const email = ref('');
 const password = ref('');
 const isLoading = ref(false);
 
-// 3. Estados do Modal de Cadastro
+// 3. Estados do Modal (Cadastro + Edição)
 const isModalOpen = ref(false);
+const isEditing = ref(false);
+const editingProductId = ref<number | null>(null);
+
 const productForm = ref({
     name: '',
     price: '',
@@ -56,11 +59,31 @@ const handleLogout = () => {
 
 // 6. Funções do Modal
 const openModal = () => {
+    isEditing.value = false;
+    editingProductId.value = null;
+    isModalOpen.value = true;
+};
+
+const openEditModal = (product: any) => {
+    isEditing.value = true;
+    editingProductId.value = product.id;
+    
+    // Mapeia os dados do produto para o formulário
+    productForm.value = {
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        image: null, // Resetamos o arquivo para não reenviar o mesmo sem necessidade
+        imagePreview: product.image // Mostra a imagem atual
+    };
+    
     isModalOpen.value = true;
 };
 
 const closeModal = () => {
     isModalOpen.value = false;
+    isEditing.value = false;
+    editingProductId.value = null;
     productForm.value = { name: '', price: '', description: '', image: null, imagePreview: '' };
 };
 
@@ -78,35 +101,40 @@ const submitForm = async () => {
         return;
     }
 
-    isLoading.value = true; // Ativa o loading no botão
+    isLoading.value = true;
     
     try {
         const formData = new FormData();
         formData.append('name', productForm.value.name);
-        formData.append('price', productForm.value.price);
+        formData.append('price', String(productForm.value.price));
         formData.append('description', productForm.value.description);
         
         if (productForm.value.image) {
             formData.append('image', productForm.value.image);
         }
 
-        // No seu App.vue, garanta que o POST aponte para o endereço completo do Backend
-        await axios.post('http://localhost:8000/api/products', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        if (isEditing.value && editingProductId.value) {
+            // LÓGICA DE EDIÇÃO
+            // Laravel exige _method: PUT em requisições de formulário com arquivo
+            formData.append('_method', 'PUT'); 
+            await axios.post(`http://localhost:8000/api/products/${editingProductId.value}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            alert("✅ Registro Atualizado com Sucesso!");
+        } else {
+            // LÓGICA DE CADASTRO NOVO
+            await axios.post('http://localhost:8000/api/products', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            alert("✅ Novo Ativo Registrado com Sucesso!");
+        }
         
-        // 1. Feedback Visual de Sucesso
-        alert("✅ Registro de Ativo Concluído com Sucesso!");
-
-        // 2. Atualiza a lista em tempo real (Página 1 para ver o novo item no topo)
-        await fetchProducts(1);
-        
-        // 3. Fecha o modal e limpa tudo
+        await fetchProducts(isEditing.value ? currentPage.value : 1);
         closeModal();
 
     } catch (e) {
         console.error(e);
-        alert('❌ Erro na sincronização. Verifique a conexão com o Buffer.');
+        alert('❌ Erro na sincronização com o banco de dados.');
     } finally {
         isLoading.value = false;
     }
@@ -138,9 +166,9 @@ onMounted(() => {
           <form @submit.prevent="handleLogin" class="space-y-4">
             <input v-model="email" type="email" placeholder="E-mail Corporativo" class="w-full bg-white/[0.05] border border-white/5 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#7c3aed]/50 focus:bg-white/[0.08] transition-all text-sm">
             <input v-model="password" type="password" placeholder="Chave de Acesso" class="w-full bg-white/[0.05] border border-white/5 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#7c3aed]/50 focus:bg-white/[0.08] transition-all text-sm">
-            <button :disabled="isLoading" class="w-full bg-[#7c3aed] text-white font-black py-5 rounded-2xl hover:bg-white hover:text-black transition-all shadow-xl shadow-[#7c3aed]/20 uppercase tracking-[0.3em] text-xs cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-wait">
-                    {{ isLoading ? 'SINCRONIZANDO COM O BANCO...' : 'Confirmar Registro no Buffer' }}
-          </button>
+            <button :disabled="isLoading" class="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-[#7c3aed] hover:text-white transition-all uppercase tracking-[0.2em] text-[11px] mt-4 cursor-pointer">
+              {{ isLoading ? 'PROCESSANDO...' : 'AUTENTICAR' }}
+            </button>
           </form>
         </div>
       </Transition>
@@ -205,7 +233,9 @@ onMounted(() => {
                 </td>
                 <td class="px-10 py-3.5">
                   <div class="flex justify-center gap-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500">
-                    <button class="px-6 py-2 rounded-xl bg-white/5 text-white text-[9px] font-black uppercase tracking-widest hover:bg-[#7c3aed] transition-all border border-white/5 cursor-pointer active:scale-95 min-w-[90px]">Editar</button>
+                    <button @click="openEditModal(product)" class="px-6 py-2 rounded-xl bg-white/5 ... cursor-pointer">
+                      Editar
+                    </button>
                     <button class="flex items-center justify-center px-6 py-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer active:scale-95 min-w-[90px]">
                       <span class="text-[9px] font-black uppercase tracking-widest">Excluir</span>
                     </button>
@@ -235,7 +265,7 @@ onMounted(() => {
             <div class="p-10 border-b border-white/5 flex justify-between items-center">
               <div>
                 <p class="text-[9px] font-black uppercase tracking-[0.4em] text-[#7c3aed]">Innyx Systems</p>
-                <h3 class="text-2xl font-bold text-white tracking-tighter italic">Novo Registro de Ativo</h3>
+                <h3 class="text-2xl font-bold text-white tracking-tighter italic">{{ isEditing ? 'Editar Registro de Ativo' : 'Novo Registro de Ativo' }}</h3>
               </div>
               <button @click="closeModal" class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-red-500 transition-all cursor-pointer text-xl">×</button>
             </div>
@@ -266,7 +296,9 @@ onMounted(() => {
                   <label for="fileUpload" class="inline-block mt-2 text-[9px] font-black uppercase tracking-widest text-[#7c3aed] cursor-pointer hover:text-white transition-colors">Selecionar Arquivo</label>
                 </div>
               </div>
-              <button class="w-full bg-[#7c3aed] text-white font-black py-5 rounded-2xl hover:bg-white hover:text-black transition-all shadow-xl shadow-[#7c3aed]/20 uppercase tracking-[0.3em] text-xs cursor-pointer active:scale-95">Confirmar Registro no Buffer</button>
+              <button :disabled="isLoading" class="w-full bg-[#7c3aed] text-white font-black py-5 rounded-2xl hover:bg-white hover:text-black transition-all shadow-xl shadow-[#7c3aed]/20 uppercase tracking-[0.3em] text-xs cursor-pointer active:scale-95 disabled:opacity-50">
+                  {{ isLoading ? 'SINCRONIZANDO...' : (isEditing ? 'Confirmar Alterações' : 'Confirmar Registro no Buffer') }}
+              </button>
             </form>
           </div>
         </div>

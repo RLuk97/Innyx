@@ -161,23 +161,34 @@ onMounted(() => {
             </tbody>
           </table>
 
-          <footer class="p-8 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/5 bg-white/[0.01]">
-            <div class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">
-                Mostrando página {{ currentPage }} de {{ lastPage }}
+          <footer class="p-8 flex flex-col items-center justify-center gap-6 border-t border-white/5 bg-white/[0.01]">
+            
+            <div class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] italic">
+                Sincronizando Buffer: Página {{ currentPage }} de {{ lastPage }}
             </div>
-            <div class="flex items-center gap-3">
+
+            <div class="flex items-center gap-4">
                 <button @click="fetchProducts(currentPage - 1)" :disabled="currentPage === 1" 
                   class="w-10 h-10 rounded-xl border border-white/5 bg-white/5 flex items-center justify-center disabled:opacity-5 hover:bg-white hover:text-black transition-all cursor-pointer text-white">
                   ←
                 </button>
+                
                 <div class="flex gap-2">
-                    <button v-for="page in lastPage" :key="page" @click="fetchProducts(page)"
-                        :class="['w-10 h-10 rounded-xl font-mono font-black text-xs transition-all border cursor-pointer',
-                            currentPage === page ? 'bg-[#7c3aed] border-[#7c3aed] text-white shadow-lg shadow-[#7c3aed]/20 scale-110' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
-                        ]">
+                    <button 
+                        v-for="page in lastPage" 
+                        :key="page"
+                        @click="fetchProducts(page)"
+                        :class="[
+                            'w-10 h-10 rounded-xl font-mono font-black text-xs transition-all border cursor-pointer',
+                            currentPage === page 
+                                ? 'bg-[#7c3aed] border-[#7c3aed] text-white shadow-lg shadow-[#7c3aed]/20 scale-110' 
+                                : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                        ]"
+                    >
                         {{ page }}
                     </button>
                 </div>
+
                 <button @click="fetchProducts(currentPage + 1)" :disabled="currentPage === lastPage"
                   class="w-10 h-10 rounded-xl border border-white/5 bg-white/5 flex items-center justify-center disabled:opacity-5 hover:bg-white hover:text-black transition-all cursor-pointer text-white">
                   →

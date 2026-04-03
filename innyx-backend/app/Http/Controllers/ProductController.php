@@ -8,73 +8,72 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    // Listar todos os produtos com paginação e busca (Requisito 2.22, 2.24, 2.25)
+    // Listar produtos (Sincronizado com o seu Composable Vue)
     public function index(Request $request)
     {
-        // 1. Pegamos o termo de busca que vem do Front-end
         $search = $request->query('search');
 
-        // 2. Fazemos a query: Se houver busca, filtra por nome ou descrição
-        $products = \App\Models\Product::when($search, function ($query, $search) {
+        $products = Product::when($search, function ($query, $search) {
             return $query->where('name', 'like', "%{$search}%")
                          ->orWhere('description', 'like', "%{$search}%");
         })
-        ->paginate(6); // 3. Pagina de 10 em 10 (Requisito 30)
+        ->orderBy('created_at', 'desc') // Mostrar os novos primeiro
+        ->paginate(6); 
 
         return response()->json($products);
     }
 
-    // Criar um novo produto (Requisito 2.6, 2.12 a 2.18)
+    // Criar um novo produto (Ajustado para o seu Modal de Vidro)
     public function store(Request $request)
     {
+        // 1. Validação (Simplificada para bater com o seu productForm do Vue)
         $validatedData = $request->validate([
-            'name' => 'required|max:50',
+            'name'        => 'required|max:50',
             'description' => 'required|max:200',
-            'price' => 'required|numeric|min:0.01', // Valor positivo
-            'expiration_date' => 'required|date|after_or_equal:today', // Não anterior à data atual
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+            'price'       => 'required|numeric|min:0.01',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
-        // Lógica para upload de imagem com nome único
+        // 2. Lógica para upload de imagem
         if ($request->hasFile('image')) {
-            $fileName = time() . '_' . $request->file('image')->getClientOriginalName();
-            $path = $request->file('image')->storeAs('products', $fileName, 'public');
-            $validatedData['image'] = $path;
+            // Salva em storage/app/public/products
+            $path = $request->file('image')->store('products', 'public');
+            // Salva o link acessível no banco
+            $validatedData['image'] = asset('storage/' . $path);
         }
 
+        // 3. Persistência no banco de dados
         $product = Product::create($validatedData);
 
         return response()->json($product, 201);
     }
-    // Visualizar um produto específico (Requisito 6)
+
     public function show($id)
     {
-        $product = Product::with('category')->findOrFail($id);
+        $product = Product::findOrFail($id);
         return response()->json($product);
     }
 
-    // Editar um produto (Requisito 23)
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
 
         $validatedData = $request->validate([
-            'name' => 'required|max:50',
+            'name'        => 'required|max:50',
             'description' => 'required|max:200',
-            'price' => 'required|numeric|min:0.01',
-            'expiration_date' => 'required|date|after_or_equal:today',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'price'       => 'required|numeric|min:0.01',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
         if ($request->hasFile('image')) {
-            // Deleta a imagem antiga se existir
-            Storage::disk('public')->delete($product->image);
+            // Remove a imagem antiga do disco se não for o placeholder
+            if ($product->image && !str_contains($product->image, 'placeholder')) {
+                $oldPath = str_replace(asset('storage/'), '', $product->image);
+                Storage::disk('public')->delete($oldPath);
+            }
             
-            $fileName = time() . '_' . $request->file('image')->getClientOriginalName();
-            $path = $request->file('image')->storeAs('products', $fileName, 'public');
-            $validatedData['image'] = $path;
+            $path = $request->file('image')->store('products', 'public');
+            $validatedData['image'] = asset('storage/' . $path);
         }
 
         $product->update($validatedData);
@@ -82,11 +81,15 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
-    // Excluir um produto (Requisito 23)
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-        Storage::disk('public')->delete($product->image);
+        
+        if ($product->image) {
+            $oldPath = str_replace(asset('storage/'), '', $product->image);
+            Storage::disk('public')->delete($oldPath);
+        }
+        
         $product->delete();
 
         return response()->json(['message' => 'Produto excluído com sucesso']);

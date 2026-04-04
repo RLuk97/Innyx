@@ -13,12 +13,11 @@ class DatabaseSeeder extends Seeder
      * @return void
      */
     public function run()
-    {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
-    }
+{
+    // Ajustado para manter o que você já tem (Eletrônicos) e adicionar as novas
+    \App\Models\Category::updateOrCreate(['id' => 1], ['name' => 'Eletrônicos']);
+    \App\Models\Category::updateOrCreate(['id' => 2], ['name' => 'Mobiliário']);
+    \App\Models\Category::updateOrCreate(['id' => 3], ['name' => 'Software/Licenças']);
+    \App\Models\Category::updateOrCreate(['id' => 4], ['name' => 'Suprimentos']);
+}
 }

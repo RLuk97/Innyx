@@ -56,7 +56,7 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 └─────────────────────────────────────────────────────────┘
 ```
 ## 📋 Requisitos do Sistema
-1. Requisitos Funcionais (RF)
+## 1. Requisitos Funcionais (RF)
 - Autenticação: O sistema permite que apenas usuários autenticados acessem o inventário.
 
 - Gerenciamento de Ativos: O sistema permite Criar, Ler, Atualizar e Excluir (CRUD) produtos.
@@ -72,7 +72,7 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 - Visualização Detalhada: É possível visualizar todos os dados de um ativo em um modal exclusivo.
 
 
-2. Requisitos Não Funcionais (RNF)
+## 2. Requisitos Não Funcionais (RNF)
 - Segurança: Senhas criptografadas e comunicação protegida por tokens (Sanctum).
 
 - Responsividade: Interface adaptável para dispositivos móveis e desktops (Mobile-first).

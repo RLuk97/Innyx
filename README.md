@@ -64,31 +64,32 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 
 ## 📡 Endpoints da API
 
-A comunicação entre o Frontend (Vue) e o Backend (Laravel) é feita via REST API com retornos padronizados em JSON.
+A comunicação entre o Frontend (Vue) e o Backend (Laravel) é feita via **REST API** com retornos padronizados em **JSON**.
 
-🔐 Autenticação
-Método,Endpoint,Descrição,Autenticação
-POST,/api/login,Login do usuário e geração de token,Não
-POST,/api/logout,Revogação do token de acesso,Sim
-
----
-
-## 🛍️ Produtos
-
-Método,Endpoint,Descrição,Permissão
-GET,/api/products,Lista produtos (paginado),products.view
-POST,/api/products,Cria um novo produto,products.create
-GET,/api/products/{id},Detalhes de um produto específico,products.view
-PUT,/api/products/{id},Atualiza produto (JSON),products.edit
-POST,/api/products/{id},Atualiza produto (FormData/Imagem),products.edit
-DELETE,/api/products/{id},Exclui um produto do sistema,products.delete
+### 🔐 Autenticação
+| Método | Endpoint | Descrição | Autenticação |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/login` | Login do usuário e geração de token | Não |
+| `POST` | `/api/logout` | Revogação do token de acesso | Sim |
 
 ---
 
-## 📂 Categorias
+### 🛍️ Produtos
+| Método | Endpoint | Descrição | Permissão |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/products` | Lista produtos (paginado) | `products.view` |
+| `POST` | `/api/products` | Cria um novo produto | `products.create` |
+| `GET` | `/api/products/{id}` | Detalhes de um produto específico | `products.view` |
+| `PUT` | `/api/products/{id}` | Atualiza produto (JSON) | `products.edit` |
+| `POST` | `/api/products/{id}` | Atualiza produto (FormData/Imagem) | `products.edit` |
+| `DELETE` | `/api/products/{id}` | Exclui um produto do sistema | `products.delete` |
 
-Método,Endpoint,Descrição,Autenticação
-GET,/api/categories,Lista todas as categorias,Não
+---
+
+### 📂 Categorias
+| Método | Endpoint | Descrição | Autenticação |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/categories` | Lista todas as categorias | Não |
 
 ---
 ## 🗄️ Modelagem de Dados (Banco de Dados)

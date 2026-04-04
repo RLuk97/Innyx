@@ -1,4 +1,4 @@
-# Desafio Técnico - Sistema de Gerenciamento de Produtos (INNYX)
+<img width="1137" height="437" alt="image" src="https://github.com/user-attachments/assets/fbcc50a9-e3b5-48f5-89c4-0044336c3c1f" /># Desafio Técnico - Sistema de Gerenciamento de Produtos (INNYX)
 
 Este é um sistema **Full Stack** profissional para gerenciamento de produtos e categorias, desenvolvido como parte de um desafio técnico para a **Innyx**. O projeto utiliza **Laravel 11** no Backend e **Vue.js 3** com **TypeScript** no Frontend, focando em performance e experiência do usuário.
 
@@ -140,6 +140,7 @@ INNYX EDUCAÇÃO/
     ├── src/components/      # UI: Modais, Tabelas e Inputs
     ├── src/composables/     # Lógica: Consumo da API (useProducts)
     └── src/assets/          # Estilização: Global e Tailwind
+```
 
 ## 👨‍💻 Autor
 **Desenvolvido por Ryan Lucas**

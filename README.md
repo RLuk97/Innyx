@@ -26,7 +26,7 @@ Este é um sistema **Full Stack** profissional para gerenciamento de produtos e 
 O projeto foi estruturado seguindo padrões de separação de responsabilidades (SoC), garantindo que a lógica de negócio, persistência de dados e interface do usuário não fiquem acopladas.
 
 ### **Backend - Arquitetura em Camadas**
-
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    API Layer (Routes)                   │
 │  Controllers → Middleware (Auth) → Validation (Request) │
@@ -41,9 +41,9 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 │                   Data Access Layer                     │
 │         MySQL Database → Migrations → Storage           │
 └─────────────────────────────────────────────────────────┘
-
+```
 ### **Frontend - Arquitetura Reativa**
-
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                 Presentation Layer                      │
 │      Vue Components (SFC) → Tailwind CSS (UI)           │
@@ -58,7 +58,7 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 │                 Service Layer (HTTP)                    │
 │        Axios Client → Interceptors → Backend API        │
 └─────────────────────────────────────────────────────────┘
-
+```
 ## 🗄️ Modelagem de Dados (Banco de Dados)
 
 O sistema utiliza um banco de dados relacional MySQL com foco em integridade e performance. Abaixo, a estrutura das principais tabelas e seus relacionamentos:

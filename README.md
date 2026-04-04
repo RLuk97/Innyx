@@ -129,6 +129,7 @@ Para facilitar a avaliação técnica, utilize os dados de acesso abaixo (gerado
 ---
 ## 📁 Estrutura de Pastas Principal
 
+```text
 INNYX EDUCAÇÃO/
 ├── innyx-backend/           # API Laravel 11
 │   ├── app/Http/Requests/   # Validações de formulário (Preço, Data)

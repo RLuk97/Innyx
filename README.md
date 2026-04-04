@@ -111,9 +111,9 @@ Relacionamentos
 ## 🔑 Credenciais de Teste
 Para facilitar a avaliação técnica, utilize os dados de acesso abaixo (gerados automaticamente via Seeder):
 
-E-mail: admin@innyx.com
+- **E-mail:** admin@innyx.com
 
-Senha: 123456
+- **Senha:** 123456
 
 ---
 

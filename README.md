@@ -71,6 +71,7 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 
 - Visualização Detalhada: É possível visualizar todos os dados de um ativo em um modal exclusivo.
 
+
 2. Requisitos Não Funcionais (RNF)
 - Segurança: Senhas criptografadas e comunicação protegida por tokens (Sanctum).
 
@@ -92,8 +93,6 @@ A comunicação entre o Frontend (Vue) e o Backend (Laravel) é feita via **REST
 | `POST` | `/api/login` | Login do usuário e geração de token | Não |
 | `POST` | `/api/logout` | Revogação do token de acesso | Sim |
 
----
-
 ### 🛍️ Produtos
 | Método | Endpoint | Descrição | Permissão |
 | :--- | :--- | :--- | :--- |
@@ -104,14 +103,11 @@ A comunicação entre o Frontend (Vue) e o Backend (Laravel) é feita via **REST
 | `POST` | `/api/products/{id}` | Atualiza produto (FormData/Imagem) | `products.edit` |
 | `DELETE` | `/api/products/{id}` | Exclui um produto do sistema | `products.delete` |
 
----
-
 ### 📂 Categorias
 | Método | Endpoint | Descrição | Autenticação |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/categories` | Lista todas as categorias | Não |
 
----
 ## 🗄️ Modelagem de Dados (Banco de Dados)
 
 O sistema utiliza um banco de dados relacional MySQL com foco em integridade e performance. Abaixo, a estrutura das principais tabelas e seus relacionamentos:
@@ -132,7 +128,6 @@ Relacionamentos
 | **products** | `image` | String | Caminho do arquivo de imagem no storage. |
 | **categories** | `id` | BigInt (PK) | Identificador único da categoria. |
 | **categories** | `name` | String | Nome (Eletrônicos, Mobiliário, etc.). |
-
 
 ## 🛠️ Como Rodar o Projeto
 
@@ -159,16 +154,11 @@ Relacionamentos
 2. Instale as dependências: `npm install`
 3. Inicie o projeto: `npm run dev`
 
----
-
 ## 🔑 Credenciais de Teste
 Para facilitar a avaliação técnica, utilize os dados de acesso abaixo (gerados automaticamente via Seeder):
 
 - **E-mail:** admin@innyx.com
-
 - **Senha:** 123456
-
----
 
 ## 📌 Funcionalidades Implementadas
 - [x] **Autenticação por Token:** Sistema de Login/Logout seguro via Sanctum.
@@ -179,7 +169,6 @@ Para facilitar a avaliação técnica, utilize os dados de acesso abaixo (gerado
 - [x] **Filtros e Performance:** Busca dinâmica por nome/descrição e paginação otimizada.
 - [x] **Interface Premium:** Design limpo, responsivo e com feedbacks visuais (Loading Spinners).
 
----
 ## 📁 Estrutura de Pastas Principal
 
 ```text

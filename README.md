@@ -2,8 +2,6 @@
 
 Este é um sistema **Full Stack** profissional para gerenciamento de produtos e categorias, desenvolvido como parte de um desafio técnico para a **Innyx**. O projeto utiliza **Laravel 11** no Backend e **Vue.js 3** com **TypeScript** no Frontend, focando em performance e experiência do usuário.
 
----
-
 ## 🚀 Tecnologias Utilizadas
 
 ### Backend
@@ -18,8 +16,6 @@ Este é um sistema **Full Stack** profissional para gerenciamento de produtos e 
 - **Linguagem:** TypeScript (Strict Mode)
 - **Estilização:** Tailwind CSS v4 (Design Responsivo & Glassmorphism)
 - **Requisições:** Axios (com Interceptors para JWT)
-
----
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -59,8 +55,32 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 │        Axios Client → Interceptors → Backend API        │
 └─────────────────────────────────────────────────────────┘
 ```
+## 📋 Requisitos do Sistema
+1. Requisitos Funcionais (RF)
+- Autenticação: O sistema permite que apenas usuários autenticados acessem o inventário.
 
----
+- Gerenciamento de Ativos: O sistema permite Criar, Ler, Atualizar e Excluir (CRUD) produtos.
+
+- Categorização: Todo produto é obrigatoriamente vinculado a uma categoria pré-definida.
+
+- Upload de Mídia: O sistema permite o upload de uma imagem representativa para cada produto.
+
+- Busca e Filtros: O usuário consegue filtrar produtos por nome ou descrição em tempo real.
+
+- Paginação: A listagem de produtos é paginada para garantir a performance da interface.
+
+- Visualização Detalhada: É possível visualizar todos os dados de um ativo em um modal exclusivo.
+
+2. Requisitos Não Funcionais (RNF)
+- Segurança: Senhas criptografadas e comunicação protegida por tokens (Sanctum).
+
+- Responsividade: Interface adaptável para dispositivos móveis e desktops (Mobile-first).
+
+- Validação de Dados: O sistema não permite preços negativos ou datas de validade retroativas.
+
+- Performance: As requisições de busca são otimizadas para evitar sobrecarga no servidor.
+
+- Usabilidade: O sistema fornece feedbacks visuais (Spinners) durante operações assíncronas.
 
 ## 📡 Endpoints da API
 

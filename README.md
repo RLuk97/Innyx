@@ -1,23 +1,72 @@
-# Sistema de Gerenciamento de Produtos (INNYX)
+# Sistema de Inventário de Ativos (INNYX)
 
-Este é um sistema **Full Stack** profissional para gerenciamento de produtos e categorias, desenvolvido como parte de um desafio técnico para a **Innyx**. O projeto utiliza **Laravel 11** no Backend e **Vue.js 3** com **TypeScript** no Frontend, focando em performance e experiência do usuário.
+Este é um sistema **Full Stack** profissional para gerenciamento de ativos e inventário, desenvolvido como parte de um desafio técnico para a **Innyx**. O projeto foi totalmente **containerizado com Docker**, utiliza **Laravel 11** no Backend e **Vue.js 3** com **TypeScript** no Frontend.
 
-## 🚀 Tecnologias Utilizadas
+## Tecnologias e Diferenciais
 
-### Backend
-- **Framework:** Laravel 11
-- **Linguagem:** PHP 8.2+
-- **Banco de Dados:** MySQL 8.0
-- **Autenticação:** Laravel Sanctum (Stateless API Tokens)
-- **Padronização:** RESTful API com retornos estruturados em JSON
+### Infraestrutura & DevOps
+- **Docker & Docker Compose:** Ambiente isolado para Frontend, Backend e Banco de Dados (MySQL).
+- **Persistência de Dados:** Volumes configurados para persistência do banco e storage de imagens.
 
-### Frontend
-- **Framework:** Vue.js 3 (Composition API)
-- **Linguagem:** TypeScript (Strict Mode)
-- **Estilização:** Tailwind CSS v4 (Design Responsivo & Glassmorphism)
-- **Requisições:** Axios (com Interceptors para JWT)
+### Segurança & ACL
+- **Níveis de Acesso:** Implementação de permissões distintas entre **Administrador** e **Usuário Comum**.
+- **Laravel Sanctum:** Autenticação segura via API Tokens.
 
-## 🏗️ Arquitetura do Sistema
+### Interface & UX
+- **Vue.js 3 (Composition API) + TypeScript.**
+- **Tailwind CSS v4:** Design moderno com Glassmorphism, efeitos de blur e responsividade total.
+- **Feedback Visual:** Skeleton loaders e estados de carregamento em todas as ações assíncronas.
+
+## Controle de Acesso (ACL)
+
+O sistema diferencia as funcionalidades baseadas no perfil do usuário logado:
+
+- **Perfil Administrador:** Acesso total ao sistema (CRUD completo). Pode criar, editar, visualizar e excluir qualquer ativo.
+- **Perfil Usuário Comum:** Acesso restrito. Pode apenas listar e visualizar os detalhes técnicos/imagens dos ativos (Read-only).
+
+## 🛠️ Como Rodar o Projeto
+
+### 1. Requisitos Prévios
+Para executar este projeto em ambiente de desenvolvimento, o único requisito é ter o **Docker** e o **Docker Compose** instalados em sua máquina. 
+
+*(Não é necessário instalar PHP, Node.js ou MySQL localmente, pois o ambiente é totalmente isolado em containers).*
+
+### 2. Passo a Passo com Docker
+1. **Clone o repositório:**
+   `git clone https://github.com/RLuk97/Innyx.git`
+2. **Suba os containers:**
+   `docker-compose up -d --build`
+3. **Prepare o ambiente (Execute apenas uma vez):**
+   `docker exec -it innyx-backend php artisan migrate --seed`
+   `docker exec -it innyx-backend php artisan storage:link`
+   
+### 4. Acessar a aplicação:
+
+- Frontend: http://localhost:5173
+
+- API Backend: http://localhost:8000
+
+## Credenciais de Teste
+
+| Perfil | E-mail | Senha | Permissões |
+| :--- | :--- | :--- | :--- |
+| Admin | admin@innyx.com | password | Acesso Total (CRUD) |
+| User | user@innyx.com | password | Apenas Visualização |
+
+## Estrutura de Pastas Principal
+```text
+INNYX EDUCAÇÃO/
+├── innyx-backend/          # API Laravel 11 (Dockerizado)
+│   ├── app/Http/Requests/  # Validações (Preço, Data)
+│   ├── database/seeders/   # População de ACL e Categorias
+│   └── storage/app/public/ # Fotos dos ativos
+├── innyx-frontend/         # SPA Vue.js 3 + TS (Dockerizado)
+│   ├── src/composables/    # Lógica de consumo (useProducts)
+│   └── src/App.vue         # Interface principal com lógica de ACL
+└── docker/                 # Configurações de infra e persistência de dados
+```
+
+## Arquitetura do Sistema
 
 O projeto foi estruturado seguindo padrões de separação de responsabilidades (SoC), garantindo que a lógica de negócio, persistência de dados e interface do usuário não fiquem acopladas.
 
@@ -55,45 +104,39 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 │        Axios Client → Interceptors → Backend API        │
 └─────────────────────────────────────────────────────────┘
 ```
-## 📋 Requisitos do Sistema
+### **Infraestrutura - Orquestração com Docker**
+Toda a arquitetura acima é encapsulada e orquestrada via **Docker Compose**, garantindo que as camadas de Frontend, Backend e Banco de Dados se comuniquem de forma isolada e segura em uma rede interna, facilitando o deploy e a replicabilidade do ambiente.
+
+## Requisitos do Sistema
 ### 1. Requisitos Funcionais (RF)
-- Autenticação: O sistema permite que apenas usuários autenticados acessem o inventário.
-
-- Gerenciamento de Ativos: O sistema permite Criar, Ler, Atualizar e Excluir (CRUD) produtos.
-
-- Categorização: Todo produto é obrigatoriamente vinculado a uma categoria pré-definida.
-
-- Upload de Mídia: O sistema permite o upload de uma imagem representativa para cada produto.
-
-- Busca e Filtros: O usuário consegue filtrar produtos por nome ou descrição em tempo real.
-
-- Paginação: A listagem de produtos é paginada para garantir a performance da interface.
-
-- Visualização Detalhada: É possível visualizar todos os dados de um ativo em um modal exclusivo.
-
+- **Autenticação:** O sistema permite que apenas usuários autenticados acessem o inventário.
+- **Controle de Acesso (ACL):** Diferenciação de permissões entre Administradores (CRUD total) e Usuários (Visualização).
+- **Gerenciamento de Ativos:** O sistema permite Criar, Ler, Atualizar e Excluir (CRUD) produtos.
+- **Categorização:** Todo produto é obrigatoriamente vinculado a uma categoria pré-definida.
+- **Upload de Mídia:** O sistema permite o upload de uma imagem representativa para cada produto.
+- **Busca e Filtros:** O usuário consegue filtrar produtos por nome ou descrição em tempo real.
+- **Paginação:** A listagem de produtos é paginada para garantir a performance da interface.
+- **Visualização Detalhada:** É possível visualizar todos os dados de um ativo em um modal exclusivo.
 
 ### 2. Requisitos Não Funcionais (RNF)
-- Segurança: Senhas criptografadas e comunicação protegida por tokens (Sanctum).
+- **Dockerização:** Ambiente orquestrado para garantir replicabilidade em qualquer máquina.
+- **Segurança:** Senhas criptografadas e comunicação protegida por tokens (Sanctum).
+- **Responsividade:** Interface adaptável para dispositivos móveis e desktops (Mobile-first).
+- **Validação de Dados:** O sistema não permite preços negativos ou datas de validade retroativas.
+- **Performance:** As requisições de busca são otimizadas para evitar sobrecarga no servidor.
+- **Usabilidade:** O sistema fornece feedbacks visuais (Spinners) durante operações assíncronas.
 
-- Responsividade: Interface adaptável para dispositivos móveis e desktops (Mobile-first).
-
-- Validação de Dados: O sistema não permite preços negativos ou datas de validade retroativas.
-
-- Performance: As requisições de busca são otimizadas para evitar sobrecarga no servidor.
-
-- Usabilidade: O sistema fornece feedbacks visuais (Spinners) durante operações assíncronas.
-
-## 📡 Endpoints da API
+## Endpoints da API
 
 A comunicação entre o Frontend (Vue) e o Backend (Laravel) é feita via **REST API** com retornos padronizados em **JSON**.
 
-### 🔐 Autenticação
+### Autenticação
 | Método | Endpoint | Descrição | Autenticação |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/login` | Login do usuário e geração de token | Não |
 | `POST` | `/api/logout` | Revogação do token de acesso | Sim |
 
-### 🛍️ Produtos
+### Produtos
 | Método | Endpoint | Descrição | Permissão |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/products` | Lista produtos (paginado) | `products.view` |
@@ -103,10 +146,12 @@ A comunicação entre o Frontend (Vue) e o Backend (Laravel) é feita via **REST
 | `POST` | `/api/products/{id}` | Atualiza produto (FormData/Imagem) | `products.edit` |
 | `DELETE` | `/api/products/{id}` | Exclui um produto do sistema | `products.delete` |
 
-### 📂 Categorias
+### Categorias
 | Método | Endpoint | Descrição | Autenticação |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/categories` | Lista todas as categorias | Não |
+
+> **Nota:** Todos os endpoints de produtos e categorias exigem o header `Authorization: Bearer {token}` para garantir a segurança dos dados, exceto o endpoint de login.
 
 ## 🗄️ Modelagem de Dados (Banco de Dados)
 
@@ -128,39 +173,13 @@ Relacionamentos
 | **products** | `image` | String | Caminho do arquivo de imagem no storage. |
 | **categories** | `id` | BigInt (PK) | Identificador único da categoria. |
 | **categories** | `name` | String | Nome (Eletrônicos, Mobiliário, etc.). |
+| **users** | `id` | BigInt (PK) | Identificador único do usuário. |
+| **users** | `name` | String | Nome completo do usuário. |
+| **users** | `email` | String (Unique) | E-mail usado para login e identificação. |
+| **users** | `password` | String | Hash criptografado da senha (Bcrypt). |
+| **users** | `role` | Enum ('admin', 'user') | Nível de acesso que define as permissões no sistema. |
 
-## 🛠️ Como Rodar o Projeto
-
-### 1. Requisitos Prévios
-- **PHP** >= 8.2
-- **Composer**
-- **Node.js** & **NPM**
-- **MySQL** (XAMPP / Laragon / Docker)
-
-### 2. Configurando o Backend
-1. Entre na pasta: `cd innyx-backend`
-2. Instale as dependências: `composer install`
-3. Configure o arquivo `.env` (baseado no `.env.example`):
-   - Ajuste as credenciais: `DB_DATABASE=innyx_teste_tecnico`
-4. Gere a chave da aplicação: `php artisan key:generate`
-5. **Migrate & Seed (Obrigatório):**
-   `php artisan migrate --seed`
-   *(Isso criará as tabelas e as categorias: Eletrônicos, Mobiliário, Software, etc.)*
-6. Crie o link simbólico para as imagens: `php artisan storage:link`
-7. Inicie o servidor: `php artisan serve`
-
-### 3. Configurando o Frontend
-1. Entre na pasta: `cd innyx-frontend`
-2. Instale as dependências: `npm install`
-3. Inicie o projeto: `npm run dev`
-
-## 🔑 Credenciais de Teste
-Para facilitar a avaliação técnica, utilize os dados de acesso abaixo (gerados automaticamente via Seeder):
-
-- **E-mail:** admin@innyx.com
-- **Senha:** 123456
-
-## 📌 Funcionalidades Implementadas
+## Funcionalidades Implementadas
 - [x] **Autenticação por Token:** Sistema de Login/Logout seguro via Sanctum.
 - [x] **CRUD Completo:** Listar, Criar, Editar e Deletar ativos.
 - [x] **Visualização Detalhada:** Modal exclusivo para ver detalhes e imagem ampliada.
@@ -168,21 +187,6 @@ Para facilitar a avaliação técnica, utilize os dados de acesso abaixo (gerado
 - [x] **Regras de Negócio:** Validação de preço positivo e bloqueio de datas de validade retroativas.
 - [x] **Filtros e Performance:** Busca dinâmica por nome/descrição e paginação otimizada.
 - [x] **Interface Premium:** Design limpo, responsivo e com feedbacks visuais (Loading Spinners).
-
-## 📁 Estrutura de Pastas Principal
-
-```text
-INNYX EDUCAÇÃO/
-├── innyx-backend/           # API Laravel 11
-│   ├── app/Http/Requests/   # Validações de formulário (Preço, Data)
-│   ├── app/Models/          # Ativos, Categorias e Usuários
-│   ├── database/seeders/    # População inicial de categorias
-│   └── storage/app/public/  # Armazenamento de fotos dos ativos
-└── innyx-frontend/          # SPA Vue.js 3 + TypeScript
-    ├── src/components/      # UI: Modais, Tabelas e Inputs
-    ├── src/composables/     # Lógica: Consumo da API (useProducts)
-    └── src/assets/          # Estilização: Global e Tailwind
-```
 
 ## 👨‍💻 Autor
 **Desenvolvido por Ryan Lucas**

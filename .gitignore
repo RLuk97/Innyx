@@ -1,0 +1,15 @@
+# Docker Data (Muito importante!)
+docker/mysql/
+innyx-backend/storage/*.key
+innyx-backend/storage/framework/
+innyx-backend/storage/logs/
+innyx-backend/vendor/
+innyx-backend/.env
+
+# Frontend
+innyx-frontend/node_modules/
+innyx-frontend/dist/
+
+# System files
+.DS_Store
+Thumbs.db

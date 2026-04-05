@@ -17,6 +17,10 @@ Este é um sistema **Full Stack** profissional para gerenciamento de ativos e in
 - **Tailwind CSS v4:** Design moderno com Glassmorphism, efeitos de blur e responsividade total.
 - **Feedback Visual:** Skeleton loaders e estados de carregamento em todas as ações assíncronas.
 
+### Backend & Linguagem
+- **PHP 8.2+ (Laravel 11):** O motor do sistema, responsável por toda a lógica de negócios, segurança e processamento de dados dentro do container Docker.
+- **Arquitetura REST:** Comunicação eficiente e padronizada entre as camadas do sistema.
+
 ## Controle de Acesso (ACL)
 
 O sistema diferencia as funcionalidades baseadas no perfil do usuário logado:
@@ -87,6 +91,9 @@ O projeto foi estruturado seguindo padrões de separação de responsabilidades 
 │         MySQL Database → Migrations → Storage           │
 └─────────────────────────────────────────────────────────┘
 ```
+> **Onde entra o PHP?**
+> O **PHP 8.2** é a linguagem que processa toda a lógica contida no diagrama acima dentro do container `innyx-backend`. Ele é responsável por interpretar as requisições enviadas pelo Frontend (Vue.js), aplicar as regras de validação do Laravel, realizar a comunicação com o banco MySQL e gerenciar o armazenamento de imagens no Storage do servidor.
+
 ### **Frontend - Arquitetura Reativa**
 ```text
 ┌─────────────────────────────────────────────────────────┐
@@ -187,6 +194,7 @@ Relacionamentos
 - [x] **Regras de Negócio:** Validação de preço positivo e bloqueio de datas de validade retroativas.
 - [x] **Filtros e Performance:** Busca dinâmica por nome/descrição e paginação otimizada.
 - [x] **Interface Premium:** Design limpo, responsivo e com feedbacks visuais (Loading Spinners).
+- [x] **Laravel 11 & PHP 8.2:** Utilização das últimas versões estáveis para garantir performance e as melhores práticas de segurança de backend.
 
 ## 👨‍💻 Autor
 **Desenvolvido por Ryan Lucas**

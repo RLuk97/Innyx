@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: innyx-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: innyx_database
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - innyx-network
+  backend:
+    build:
+      context: ./innyx-backend
+      dockerfile: Dockerfile
+    container_name: innyx-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./innyx-backend:/var/www
+    depends_on:
+      - db
+    networks:
+      - innyx-network
+  frontend:
+    build:
+      context: ./innyx-frontend
+      dockerfile: Dockerfile
+    container_name: innyx-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./innyx-frontend:/app
+      - /app/node_modules
+    networks:
+      - innyx-network
+networks:
+  innyx-network:
+    driver: bridge

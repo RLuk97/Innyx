@@ -8,11 +8,12 @@ const { products, search, currentPage, lastPage, isFetching, fetchProducts } = u
 
 // 2. Estados de Autenticação e Sistema
 const token = ref(localStorage.getItem('token') || '');
+const userRole = ref(localStorage.getItem('user_role') || 'admin'); 
 const email = ref('');
 const password = ref('');
 const isLoading = ref(false);
 
-// 3. Estados do Modal (Cadastro + Edição + Visualização)
+// 3. Estados do Modal
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const editingProductId = ref<number | null>(null);
@@ -20,106 +21,93 @@ const isViewModalOpen = ref(false);
 const selectedProduct = ref<any>(null);
 
 const productForm = ref({
-    name: '',
-    price: '',
-    description: '',
-    expiration_date: '', 
-    category_id: '',     
-    image: null as File | null,
-    imagePreview: ''
+    name: '', price: '', description: '', expiration_date: '', 
+    category_id: '', image: null as File | null, imagePreview: ''
 });
 
-// Mock de Categorias para o Select
 const categories = ref([
-    { id: 1, name: 'Eletrônicos' },
-    { id: 2, name: 'Mobiliário' },
-    { id: 3, name: 'Software/Licenças' },
-    { id: 4, name: 'Suprimentos' }
+    { id: 1, name: 'Eletrônicos' }, { id: 2, name: 'Mobiliário' },
+    { id: 3, name: 'Software/Licenças' }, { id: 4, name: 'Suprimentos' }
 ]);
 
-// 4. Axios Interceptor para Token JWT
+// 4. Axios Interceptor
 axios.interceptors.request.use((config) => {
   const activeToken = localStorage.getItem('token');
   if (activeToken) config.headers.Authorization = `Bearer ${activeToken}`;
   return config;
 });
 
-// 5. Ações de Autenticação
+// 5. Funções de Ação
 const handleLogin = async () => {
     isLoading.value = true;
     try {
-        const { data } = await axios.post('http://localhost:8000/api/login', { 
-            email: email.value, 
-            password: password.value 
-        });
+        const { data } = await axios.post('http://localhost:8000/api/login', { email: email.value, password: password.value });
         token.value = data.access_token;
+        userRole.value = data.user.role; 
         localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user_role', data.user.role);
         await fetchProducts(1);
-    } catch (e) {
-        alert('Falha na autenticação. Verifique seu e-mail e senha.');
-    } finally {
-        isLoading.value = false;
-    }
+    } catch (e) { alert('Falha na autenticação.'); } finally { isLoading.value = false; }
 };
 
-const handleLogout = () => {
-    token.value = '';
-    localStorage.removeItem('token');
+const handleLogout = () => { token.value = ''; localStorage.clear(); window.location.reload(); };
+
+const openModal = () => { 
+    isEditing.value = false; 
+    productForm.value = { name: '', price: '', description: '', expiration_date: '', category_id: '', image: null, imagePreview: '' };
+    isModalOpen.value = true; 
 };
 
-// 6. Funções do Modal
-const openModal = () => {
-    isEditing.value = false;
-    editingProductId.value = null;
-    isModalOpen.value = true;
-};
+const closeModal = () => { isModalOpen.value = false; };
 
 const openViewModal = (product: any) => {
-    selectedProduct.value = product;
+    selectedProduct.value = { ...product }; 
     isViewModalOpen.value = true;
-};
-
-const closeViewModal = () => {
-    isViewModalOpen.value = false;
-    selectedProduct.value = null;
 };
 
 const openEditModal = (product: any) => {
     isEditing.value = true;
     editingProductId.value = product.id;
-    
     productForm.value = {
-        name: product.name,
-        price: product.price,
-        description: product.description,
+        name: product.name, price: product.price, description: product.description || '',
         expiration_date: product.expiration_date || '', 
         category_id: product.category_id || (product.category ? product.category.id : ''), 
-        image: null, 
-        imagePreview: product.image 
+        image: null, imagePreview: product.image 
     };
-    
     isModalOpen.value = true;
 };
 
-const closeModal = () => {
-    isModalOpen.value = false;
-    isEditing.value = false;
-    editingProductId.value = null;
-    productForm.value = { name: '', price: '', description: '', expiration_date: '', category_id: '', image: null, imagePreview: '' };
-};
-
 const deleteProduct = async (id: number) => {
-    if (!confirm("⚠️ Atenção: Deseja realmente excluir este registro?")) return;
-    isLoading.value = true;
+    if (!confirm("⚠️ Deseja excluir este registro?")) return;
     try {
         await axios.delete(`http://localhost:8000/api/products/${id}`);
-        alert("✅ Registro removido com sucesso!");
         await fetchProducts(currentPage.value);
-    } catch (e) {
-        alert("❌ Erro ao excluir o produto.");
-    } finally {
-        isLoading.value = false;
-    }
+    } catch (e) { alert("Erro ao excluir."); }
+};
+
+const submitForm = async () => {
+    if (!productForm.value.name || !productForm.value.price) return alert("Preencha os campos obrigatórios.");
+    
+    isLoading.value = true;
+    try {
+        const formData = new FormData();
+        formData.append('name', productForm.value.name);
+        formData.append('price', String(productForm.value.price));
+        formData.append('description', productForm.value.description || ''); // Garante que a descrição vá
+        formData.append('expiration_date', productForm.value.expiration_date);
+        formData.append('category_id', String(productForm.value.category_id));
+        
+        if (productForm.value.image) formData.append('image', productForm.value.image);
+
+        if (isEditing.value) {
+            formData.append('_method', 'PUT');
+            await axios.post(`http://localhost:8000/api/products/${editingProductId.value}`, formData);
+        } else {
+            await axios.post('http://localhost:8000/api/products', formData);
+        }
+        await fetchProducts(1);
+        closeModal();
+    } catch (e) { alert('Erro ao salvar.'); } finally { isLoading.value = false; }
 };
 
 const handleImageUpload = (event: any) => {
@@ -130,74 +118,22 @@ const handleImageUpload = (event: any) => {
     }
 };
 
-const submitForm = async () => {
-    if (!productForm.value.name || !productForm.value.price || !productForm.value.expiration_date || !productForm.value.category_id) {
-        return alert("⚠️ Por favor, preencha todos os campos obrigatórios.");
-    }
-
-    const today = new Date().toISOString().split('T')[0];
-    if (productForm.value.expiration_date < today) {
-        return alert("❌ A data de validade não pode ser anterior a hoje.");
-    }
-
-    if (Number(productForm.value.price) <= 0) {
-        return alert("❌ O preço deve ser um valor positivo.");
-    }
-
-    isLoading.value = true;
-    
-    try {
-        const formData = new FormData();
-        formData.append('name', productForm.value.name.substring(0, 50)); 
-        formData.append('description', productForm.value.description.substring(0, 200)); 
-        formData.append('price', String(productForm.value.price));
-        formData.append('expiration_date', productForm.value.expiration_date); 
-        formData.append('category_id', String(productForm.value.category_id));
-        
-        if (productForm.value.image) {
-            formData.append('image', productForm.value.image);
-        }
-
-        if (isEditing.value && editingProductId.value) {
-            formData.append('_method', 'PUT'); 
-            await axios.post(`http://localhost:8000/api/products/${editingProductId.value}`, formData);
-            alert("✅ Alterações salvas com sucesso!");
-        } else {
-            await axios.post('http://localhost:8000/api/products', formData);
-            alert("✅ Produto cadastrado com sucesso!");
-        }
-        
-        await fetchProducts(1);
-        closeModal();
-    } catch (e: any) {
-        const errorData = e.response?.data?.errors;
-        if (errorData) {
-            const messages = Object.values(errorData).flat().join('\n');
-            alert("❌ Erro de Validação:\n" + messages);
-        } else {
-            alert('❌ Erro de conexão com o servidor. Verifique os dados.');
-        }
-    } finally {
-        isLoading.value = false;
-    }
-};
-
 const formatCurrency = (v: any) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
 onMounted(() => { if (token.value) fetchProducts(1); });
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f1f5f9] font-sans text-slate-600 selection:bg-[#7c3aed]/10 overflow-x-hidden relative">
+  <div class="min-h-screen bg-[#f8fafc] font-sans text-slate-600 selection:bg-[#7c3aed]/10 overflow-x-hidden relative">
     
     <div v-if="!token" class="flex min-h-screen items-center justify-center p-6 bg-slate-100">
-      <div class="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-xl border border-white text-center">
+      <div class="w-full max-w-md bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-2xl border border-white text-center">
         <img src="https://innyx.com/wp-content/uploads/2025/06/logo-innyx_branco.webp" class="h-8 mx-auto mb-10 invert">
         <h2 class="text-xs font-black uppercase tracking-[0.3em] text-[#7c3aed] mb-8">Acesso Restrito</h2>
         <form @submit.prevent="handleLogin" class="space-y-4">
-          <input v-model="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#7c3aed]">
-          <input v-model="password" type="password" placeholder="Senha" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#7c3aed]">
-          <button class="w-full bg-[#7c3aed] text-white font-bold py-4 rounded-2xl hover:bg-[#6d28d9] transition-all uppercase text-[11px] tracking-widest cursor-pointer">
+          <input v-model="email" type="email" placeholder="E-mail" class="w-full bg-white/50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#7c3aed] transition-all">
+          <input v-model="password" type="password" placeholder="Senha" class="w-full bg-white/50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#7c3aed] transition-all">
+          <button class="w-full bg-[#7c3aed] text-white font-bold py-4 rounded-2xl hover:bg-[#6d28d9] transition-all uppercase text-[11px] tracking-widest shadow-lg shadow-[#7c3aed]/20">
             {{ isLoading ? 'Entrando...' : 'Acessar Sistema' }}
           </button>
         </form>
@@ -205,62 +141,57 @@ onMounted(() => { if (token.value) fetchProducts(1); });
     </div>
 
     <div v-else>
-      <header class="fixed top-0 inset-x-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-200 min-h-[5rem] flex items-center px-4 sm:px-8 justify-between flex-wrap gap-4 py-4 sm:py-0">
-          <img src="https://innyx.com/wp-content/uploads/2025/06/logo-innyx_branco.webp" class="h-8 sm:h-10 w-auto invert">
-          <div class="flex items-center gap-3 sm:gap-6 w-full sm:w-auto justify-between sm:justify-end">
-            <div class="relative flex-1 sm:flex-none">
-              <input v-model="search" @input="fetchProducts(1)" type="text" placeholder="Filtrar..." class="bg-slate-100/50 border border-slate-200 rounded-full px-10 py-2 text-xs w-full sm:w-64 outline-none focus:bg-white transition-all">
-              <span class="absolute left-4 top-2.5 opacity-30">🔍</span>
+      <header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-100 min-h-[5rem] flex items-center px-8 justify-between shadow-sm">
+          <img src="https://innyx.com/wp-content/uploads/2025/06/logo-innyx_branco.webp" class="h-8 w-auto invert opacity-80">
+          <div class="flex items-center gap-6">
+            <div class="relative group">
+              <input v-model="search" @input="fetchProducts(1)" type="text" placeholder="Filtrar ativos..." class="bg-slate-100/50 border border-transparent rounded-full px-10 py-2 text-xs w-64 outline-none focus:bg-white focus:border-[#7c3aed]/20 transition-all">
+              <span class="absolute left-4 top-2.5 opacity-20 group-focus-within:opacity-50 transition-opacity">🔍</span>
             </div>
-            <button @click="handleLogout" class="text-xs font-bold text-red-500 cursor-pointer p-2">Sair</button>
+            <button @click="handleLogout" class="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors cursor-pointer">Sair</button>
           </div>
       </header>
 
-      <main class="pt-32 sm:pt-40 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10 gap-6">
+      <main class="pt-40 pb-20 px-8 max-w-7xl mx-auto">
+        <div class="flex justify-between items-end mb-12">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-[0.4em] text-[#7c3aed]">Gestão de Produtos</p>
-                <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight italic">Inventário de Ativos</h2>
+                <p class="text-[10px] font-black uppercase tracking-[0.5em] text-[#7c3aed] mb-2">Inventory Management</p>
+                <h2 class="text-4xl font-bold text-slate-800 tracking-tight italic">Inventário de Ativos</h2>
             </div>
-            <button @click="openModal" class="w-full sm:w-auto bg-[#7c3aed] text-white px-8 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-[#6d28d9] cursor-pointer shadow-lg shadow-[#7c3aed]/20 transition-all">
+            <button v-if="userRole === 'admin'" @click="openModal" class="bg-[#7c3aed] text-white px-10 py-4 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-[#6d28d9] hover:-translate-y-1 active:translate-y-0 cursor-pointer shadow-xl shadow-[#7c3aed]/20 transition-all">
                 + Novo Produto
             </button>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white/70 backdrop-blur-md rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="w-full text-left min-w-[700px]">
+            <table class="w-full text-left min-w-[800px]">
               <thead>
-                <tr class="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50">
-                  <th class="px-10 py-5">Especificação</th>
-                  <th class="px-10 py-5 text-center">Valor Estimado</th>
-                  <th class="px-10 py-5 text-center">Ações</th>
+                <tr class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 bg-slate-50/50">
+                  <th class="px-12 py-6">Especificação Técnica</th>
+                  <th class="px-12 py-6 text-center">Valor Estimado</th>
+                  <th class="px-12 py-6 text-center">Ações</th>
                 </tr>
               </thead>
-              <tbody class="bg-white">
-                <tr v-for="product in products" :key="product.id" class="group hover:bg-slate-50/80 transition-all duration-300">
-                  <td class="px-10 py-5">
-                    <div class="flex items-center gap-5">
-                      <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex-none overflow-hidden shadow-sm">
-                          <img 
-                            :src="product.image && product.image.startsWith('http') ? product.image : `http://localhost:8000/storage/${product.image}`" 
-                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-125"
-                          >
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="product in products" :key="product.id" class="group hover:bg-white/80 transition-all duration-500">
+                  <td class="px-12 py-6">
+                    <div class="flex items-center gap-6">
+                      <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-white overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+                          <img :src="product.image && product.image.startsWith('http') ? product.image : `http://localhost:8000/storage/${product.image}`" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                       </div>
                       <div>
-                        <div class="font-bold text-slate-800 text-sm tracking-tight transition-colors duration-300 group-hover:text-[#7c3aed]">
-                            {{ product.name }}
-                        </div>
-                        <div class="text-[11px] text-slate-400 italic line-clamp-1 max-w-sm">{{ product.description }}</div>
+                        <div class="font-bold text-slate-800 text-sm tracking-tight group-hover:text-[#7c3aed] transition-colors mb-0.5">{{ product.name }}</div>
+                        <div class="text-[11px] text-slate-400 italic line-clamp-1 max-w-md opacity-70 group-hover:opacity-100 transition-opacity">{{ product.description }}</div>
                       </div>
                     </div>
                   </td>
-                  <td class="px-10 py-5 text-center font-bold text-slate-700">{{ formatCurrency(product.price) }}</td>
-                  <td class="px-10 py-5 text-center">
-                    <div class="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <button @click="openViewModal(product)" class="p-2 text-[#7c3aed] hover:scale-110 cursor-pointer font-bold text-[10px] uppercase">Ver</button>
-                        <button @click="openEditModal(product)" class="p-2 text-slate-400 hover:text-[#7c3aed] cursor-pointer font-bold text-[10px] uppercase">Editar</button>
-                        <button @click="deleteProduct(product.id)" class="p-2 text-slate-400 hover:text-red-500 cursor-pointer font-bold text-[10px] uppercase">Excluir</button>
+                  <td class="px-12 py-6 text-center font-bold text-slate-700 text-sm">{{ formatCurrency(product.price) }}</td>
+                  <td class="px-12 py-6 text-center">
+                    <div class="flex justify-center gap-6">
+                        <button @click="openViewModal(product)" class="text-emerald-500 font-black text-[10px] uppercase tracking-widest hover:text-emerald-700 transition-colors cursor-pointer">Ver</button>
+                        <button v-if="userRole === 'admin'" @click="openEditModal(product)" class="text-blue-500 font-black text-[10px] uppercase tracking-widest hover:text-blue-700 transition-colors cursor-pointer">Editar</button>
+                        <button v-if="userRole === 'admin'" @click="deleteProduct(product.id)" class="text-red-400 font-black text-[10px] uppercase tracking-widest hover:text-red-600 transition-colors cursor-pointer">Excluir</button>
                     </div>
                   </td>
                 </tr>
@@ -268,81 +199,61 @@ onMounted(() => { if (token.value) fetchProducts(1); });
             </table>
           </div>
 
-          <footer class="p-8 flex flex-col items-center justify-center gap-4 bg-slate-50/30">
-            <div class="flex items-center gap-3">
-                <button @click="fetchProducts(currentPage - 1)" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center disabled:opacity-30 hover:bg-slate-50 transition-all cursor-pointer shadow-sm">
-                  <span class="text-slate-600 text-xs">←</span>
-                </button>
+          <footer class="p-10 flex justify-center bg-slate-50/20 border-t border-white/50">
+            <div class="flex items-center gap-4">
+                <button @click="fetchProducts(currentPage - 1)" :disabled="currentPage === 1" class="w-10 h-10 rounded-xl border border-white bg-white/50 flex items-center justify-center disabled:opacity-20 hover:bg-white hover:shadow-md transition-all cursor-pointer shadow-sm">←</button>
                 <div class="flex gap-2">
-                    <button v-for="page in lastPage" :key="page" @click="fetchProducts(page)" :class="['w-8 h-8 rounded-lg font-bold text-xs cursor-pointer transition-all border', currentPage === page ? 'bg-[#7c3aed] border-[#7c3aed] text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-[#7c3aed]']">{{ page }}</button>
+                    <button v-for="page in lastPage" :key="page" @click="fetchProducts(page)" :class="['w-10 h-10 rounded-xl font-bold text-xs cursor-pointer transition-all border', currentPage === page ? 'bg-[#7c3aed] border-[#7c3aed] text-white shadow-lg shadow-[#7c3aed]/30' : 'bg-white/50 border-white text-slate-400 hover:bg-white']">{{ page }}</button>
                 </div>
-                <button @click="fetchProducts(currentPage + 1)" :disabled="currentPage === lastPage" class="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center disabled:opacity-30 hover:bg-slate-50 transition-all shadow-sm cursor-pointer">
-                  <span class="text-slate-600 text-xs">→</span>
-                </button>
+                <button @click="fetchProducts(currentPage + 1)" :disabled="currentPage === lastPage" class="w-10 h-10 rounded-xl border border-white bg-white/50 flex items-center justify-center disabled:opacity-20 hover:bg-white hover:shadow-md transition-all cursor-pointer shadow-sm">→</button>
             </div>
           </footer>
         </div>
       </main>
 
       <Transition name="fade">
-        <div v-if="isModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/20 backdrop-blur-sm">
+        <div v-if="isModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/30 backdrop-blur-md">
           <div @click="closeModal" class="absolute inset-0"></div>
-          <div class="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div class="p-6 sm:p-8 flex justify-between items-center bg-slate-50/30 sticky top-0 z-10 backdrop-blur-md">
-              <h3 class="text-xl font-bold text-slate-800 italic">{{ isEditing ? 'Editar Registro' : 'Cadastrar Registro' }}</h3>
-              <button @click="closeModal" class="text-2xl text-slate-300 hover:text-red-500 cursor-pointer">×</button>
+          <div class="relative w-full max-w-2xl bg-white/90 backdrop-blur-2xl rounded-[3rem] shadow-3xl border border-white overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div class="p-10 flex justify-between items-center border-b border-slate-50">
+              <h3 class="text-2xl font-bold text-slate-800 italic tracking-tight">{{ isEditing ? 'Editar Registro' : 'Novo Ativo' }}</h3>
+              <button @click="closeModal" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all cursor-pointer">×</button>
             </div>
-            <form @submit.prevent="submitForm" class="p-6 sm:p-8 space-y-5">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-400 uppercase">Nome (Máx 50)</label>
-                  <input v-model="productForm.name" type="text" maxlength="50" placeholder="Ex: Teclado Mecânico" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#7c3aed] transition-all" required>
+            <form @submit.prevent="submitForm" class="p-10 space-y-6">
+              <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Nome do Produto</label>
+                  <input v-model="productForm.name" type="text" placeholder="Ex: MacBook Pro" class="w-full bg-slate-50/50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-[#7c3aed] transition-all">
                 </div>
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-400 uppercase">Preço (R$)</label>
-                  <input v-model="productForm.price" type="number" step="0.01" min="0.01" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#7c3aed] transition-all" required>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Preço (BRL)</label>
+                  <input v-model="productForm.price" type="number" step="0.01" placeholder="0.00" class="w-full bg-slate-50/50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-[#7c3aed] transition-all">
                 </div>
               </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-400 uppercase">Data de Validade</label>
-                  <input v-model="productForm.expiration_date" type="date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#7c3aed] transition-all" required>
+              <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Data de Validade</label>
+                  <input v-model="productForm.expiration_date" type="date" class="w-full bg-slate-50/50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-[#7c3aed] transition-all">
                 </div>
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-400 uppercase">Categoria Relacionada</label>
-                  <select v-model="productForm.category_id" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#7c3aed] transition-all appearance-none cursor-pointer" required>
-                    <option value="" disabled selected>Selecione uma categoria...</option>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Categoria de Ativo</label>
+                  <select v-model="productForm.category_id" class="w-full bg-slate-50/50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-[#7c3aed] transition-all">
+                    <option value="" disabled>Selecione...</option>
                     <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
                 </div>
               </div>
-
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Descrição (Máx 200)</label>
-                <textarea v-model="productForm.description" maxlength="200" rows="2" placeholder="Breve descrição do ativo..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none resize-none focus:border-[#7c3aed] transition-all" required></textarea>
+              <div class="space-y-2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Descrição Detalhada</label>
+                <textarea v-model="productForm.description" rows="3" placeholder="Informações técnicas e observações..." class="w-full bg-slate-50/50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-[#7c3aed] transition-all resize-none"></textarea>
               </div>
-
-              <div class="relative group/upload">
-                <label for="fileUpload" class="flex items-center gap-6 p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#7c3aed] transition-all cursor-pointer group-hover/upload:bg-slate-100/50">
-                    <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex-none overflow-hidden flex items-center justify-center relative shadow-sm">
-                        <img v-if="productForm.imagePreview" :src="productForm.imagePreview" class="w-full h-full object-cover">
-                        <span v-else class="text-xl">📷</span>
-                    </div>
-                    <div class="flex-1 text-left">
-                        <p class="text-xs font-bold text-slate-700 italic">Foto do Produto</p>
-                        <p class="text-[10px] text-slate-400 truncate">{{ productForm.image ? productForm.image.name : 'Clique para selecionar JPG ou PNG' }}</p>
-                    </div>
-                </label>
-                <input type="file" @change="handleImageUpload" class="hidden" id="fileUpload" accept="image/*">
+              <div class="p-6 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200 text-center hover:border-[#7c3aed]/30 transition-colors">
+                <input type="file" @change="handleImageUpload" class="text-xs text-slate-400 mb-4 block mx-auto">
+                <img v-if="productForm.imagePreview" :src="productForm.imagePreview" class="h-32 mx-auto rounded-2xl object-cover shadow-lg border-4 border-white">
+                <p v-else class="text-[10px] text-slate-400 uppercase font-bold">Arraste a foto do ativo ou clique aqui</p>
               </div>
-
-              <button type="submit" :disabled="isLoading" class="w-full bg-[#7c3aed] text-white font-bold py-4 rounded-2xl hover:bg-[#6d28d9] transition-all uppercase text-[11px] tracking-widest cursor-pointer shadow-lg shadow-[#7c3aed]/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <span v-if="isLoading" class="flex items-center justify-center gap-2">
-                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    PROCESSANDO...
-                  </span>
-                  <span v-else>{{ isEditing ? 'SALVAR ALTERAÇÕES' : 'FINALIZAR CADASTRO' }}</span>
+              <button type="submit" class="w-full bg-[#7c3aed] text-white font-bold py-5 rounded-[2rem] hover:bg-[#6d28d9] shadow-2xl shadow-[#7c3aed]/30 uppercase text-xs tracking-[0.3em] transition-all">
+                {{ isLoading ? 'Gravando Informações...' : 'Finalizar Cadastro' }}
               </button>
             </form>
           </div>
@@ -350,57 +261,54 @@ onMounted(() => { if (token.value) fetchProducts(1); });
       </Transition>
 
       <Transition name="fade">
-        <div v-if="isViewModalOpen && selectedProduct" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-          <div @click="closeViewModal" class="absolute inset-0"></div>
-          <div class="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div class="p-6 flex justify-between items-center bg-slate-50/50">
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-[#7c3aed]">
-                  {{ selectedProduct.category?.name || 'Sem Categoria' }}
+        <div v-if="isViewModalOpen && selectedProduct" class="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-xl">
+          <div @click="isViewModalOpen = false" class="absolute inset-0"></div>
+          <div class="relative w-full max-w-xl bg-white rounded-[3.5rem] shadow-4xl p-12 animate-in fade-in zoom-in duration-500 border border-white">
+            <div class="text-center mb-8">
+                <p class="text-[10px] font-black text-[#7c3aed] uppercase tracking-[0.5em] mb-2">Detalhes do Produto</p>
+                <h3 class="text-3xl font-bold text-slate-800 italic">{{ selectedProduct.name }}</h3>
+            </div>
+            
+            <div class="w-full h-72 rounded-[2.5rem] bg-slate-50 border border-slate-100 mb-8 overflow-hidden shadow-inner flex items-center justify-center p-4">
+                <img :src="selectedProduct.image && selectedProduct.image.startsWith('http') ? selectedProduct.image : `http://localhost:8000/storage/${selectedProduct.image}`" class="max-w-full max-h-full object-contain rounded-xl shadow-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-6 mb-8">
+                <div class="bg-slate-50/50 p-6 rounded-3xl border border-white shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preço Estimado</p>
+                    <p class="text-2xl font-bold text-slate-800">{{ formatCurrency(selectedProduct.price) }}</p>
+                </div>
+                <div class="bg-slate-50/50 p-6 rounded-3xl border border-white shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Vencimento</p>
+                    <p class="text-2xl font-bold text-slate-800">
+                        {{ selectedProduct.expiration_date ? new Date(selectedProduct.expiration_date).toLocaleDateString('pt-BR') : '—' }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50/50 p-8 rounded-[2.5rem] border border-white shadow-sm mb-10">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Informações Técnicas</p>
+                <p class="text-sm text-slate-600 leading-relaxed italic">
+                  "{{ selectedProduct.description || 'Este ativo não possui uma descrição técnica detalhada cadastrada no sistema.' }}"
                 </p>
-                <h3 class="text-xl font-bold text-slate-800 italic">{{ selectedProduct.name }}</h3>
-              </div>
-              <button @click="closeViewModal" class="text-2xl text-slate-300 hover:text-red-500 cursor-pointer transition-colors">×</button>
             </div>
 
-            <div class="p-8 space-y-6">
-              <div class="w-full h-64 rounded-3xl bg-slate-100 border border-slate-200 overflow-hidden shadow-inner">
-                <img :src="selectedProduct.image && selectedProduct.image.startsWith('http') ? selectedProduct.image : `http://localhost:8000/storage/${selectedProduct.image}`" class="w-full h-full object-contain p-4">
-              </div>
-
-              <div class="grid grid-cols-2 gap-6">
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Preço Atual</p>
-                  <p class="text-lg font-bold text-slate-800">{{ formatCurrency(selectedProduct.price) }}</p>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Data de Validade</p>
-                  <p class="text-lg font-bold text-slate-800">
-                      {{ new Date(selectedProduct.expiration_date).toLocaleDateString('pt-BR') }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Descrição do Ativo</p>
-                <p class="text-sm text-slate-600 leading-relaxed">{{ selectedProduct.description }}</p>
-              </div>
-
-              <button @click="closeViewModal" class="w-full bg-slate-800 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all uppercase text-[11px] tracking-widest shadow-lg">
-                FECHAR VISUALIZAÇÃO
-              </button>
-            </div>
+            <button @click="isViewModalOpen = false" class="w-full bg-slate-800 text-white font-black py-5 rounded-[2rem] hover:bg-black transition-all text-[10px] tracking-[0.4em] uppercase shadow-xl">
+              Fechar Janela
+            </button>
           </div>
         </div>
       </Transition>
+
     </div>
   </div>
 </template>
 
 <style>
-body { background-color: #f1f5f9; margin: 0; }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-::-webkit-scrollbar { height: 4px; width: 4px; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+body { background-color: #f8fafc; margin: 0; font-family: 'Inter', sans-serif; }
+.fade-enter-active, .fade-leave-active { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: scale(0.95); }
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 </style>

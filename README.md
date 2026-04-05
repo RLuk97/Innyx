@@ -196,5 +196,5 @@ Relacionamentos
 - [x] **Interface Premium:** Design limpo, responsivo e com feedbacks visuais (Loading Spinners).
 - [x] **Laravel 11 & PHP 8.2:** Utilização das últimas versões estáveis para garantir performance e as melhores práticas de segurança de backend.
 
-## 👨‍💻 Autor
+## Autor
 **Desenvolvido por Ryan Lucas**

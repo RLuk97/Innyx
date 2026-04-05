@@ -19,7 +19,7 @@ class ProductController extends Controller
         })
         ->with('category') // Carrega o relacionamento para o Front
         ->orderBy('created_at', 'desc')
-        ->paginate(6); 
+        ->paginate(5); 
 
         return response()->json($products);
     }

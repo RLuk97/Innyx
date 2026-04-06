@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     use HasFactory;
-
-    // Adicionados os campos obrigatórios para permitir a gravação no banco
     protected $fillable = [
         'name', 
         'price', 
@@ -18,8 +16,6 @@ class Product extends Model
         'expiration_date', // 
         'category_id'      // 
     ];
-
-    // Relacionamento: Um produto pertence a uma categoria 
     public function category()
     {
         return $this->belongsTo(Category::class);

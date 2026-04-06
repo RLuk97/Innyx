@@ -6,21 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
+
     public function up()
     {
-        // Tabela de Categorias - Requisito 2.19 & 2.20
+ 
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100); // Nome: máximo de 100 caracteres
+            $table->string('name', 100);
             $table->timestamps();
         });
 
-        // Tabela de Produtos - Requisito 2.6 & 2.12 a 2.18
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name', 50); // Máximo de 50 caracteres
@@ -33,11 +28,6 @@ return new class extends Migration
     });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('categories_and_products_tables');

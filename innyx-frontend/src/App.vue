@@ -3,17 +3,12 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useProducts } from './composables/useProducts';
 
-// 1. Lógica do Composable
 const { products, search, currentPage, lastPage, isFetching, fetchProducts } = useProducts();
-
-// 2. Estados de Autenticação e Sistema
 const token = ref(localStorage.getItem('token') || '');
 const userRole = ref(localStorage.getItem('user_role') || 'admin'); 
 const email = ref('');
 const password = ref('');
 const isLoading = ref(false);
-
-// 3. Estados do Modal
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const editingProductId = ref<number | null>(null);
@@ -30,14 +25,12 @@ const categories = ref([
     { id: 3, name: 'Software/Licenças' }, { id: 4, name: 'Suprimentos' }
 ]);
 
-// 4. Axios Interceptor
 axios.interceptors.request.use((config) => {
   const activeToken = localStorage.getItem('token');
   if (activeToken) config.headers.Authorization = `Bearer ${activeToken}`;
   return config;
 });
 
-// 5. Funções de Ação
 const handleLogin = async () => {
     isLoading.value = true;
     try {

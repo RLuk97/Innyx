@@ -17,7 +17,7 @@ class ProductController extends Controller
             return $query->where('name', 'like', "%{$search}%")
                          ->orWhere('description', 'like', "%{$search}%");
         })
-        ->with('category') // Carrega o relacionamento para o Front
+        ->with('category') 
         ->orderBy('created_at', 'desc')
         ->paginate(5); 
 
@@ -27,7 +27,6 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
-            // 1. Validação com TODAS as regras do edital
             $validator = Validator::make($request->all(), [
                 'name'            => 'required|max:50',
                 'description'     => 'required|max:200',
@@ -43,13 +42,11 @@ class ProductController extends Controller
 
             $validatedData = $validator->validated();
 
-            // 2. Upload de imagem com nome único [cite: 17]
             if ($request->hasFile('image')) {
                 $path = $request->file('image')->store('products', 'public');
                 $validatedData['image'] = asset('storage/' . $path);
             }
 
-            // 3. Persistência (Lembrar de adicionar ao $fillable no Model)
             $product = Product::create($validatedData);
 
             return response()->json($product, 201);
@@ -93,7 +90,6 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
-    // Os métodos show e destroy permanecem os mesmos...
     public function show($id)
     {
         $product = Product::with('category')->findOrFail($id);
